@@ -4,7 +4,7 @@ databaseChangeLog:
       author: test-user
       changes:
         - sqlFile:
-            path: create_test_table.sql
+            path: db/sql/create_test_table.sql
             relativeToChangelogFile: true
             endDelimiter: ";"
             splitStatements: true
