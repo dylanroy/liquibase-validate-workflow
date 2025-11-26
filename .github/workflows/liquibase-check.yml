@@ -50,11 +50,12 @@ jobs:
           tar -xzf liquibase.tar.gz -C liquibase --strip-components=1
           # Try to locate the liquibase executable inside the extracted tree.
           # Some distributions put the wrapper in a subdir (e.g. 'bin' or root),
-          # so search for a file named 'liquibase' and make its directory available on PATH.
-          EXEC_PATH=$(find liquibase -maxdepth 4 -type f -iname 'liquibase' -print -quit || true)
+          # and sometimes the executable includes the version in its filename.
+          # Prefer files that are executable and whose name contains 'liquibase'.
+          EXEC_PATH=$(find liquibase -maxdepth 6 -type f \( -iname '*liquibase*' -o -iname 'liquibase.sh' -o -iname 'liquibase-cli' \) -perm /111 -print -quit || true)
           if [ -z "$EXEC_PATH" ]; then
-            # Try common fallback names
-            EXEC_PATH=$(find liquibase -maxdepth 4 -type f \( -iname 'liquibase.sh' -o -iname 'liquibase-cli' \) -print -quit || true)
+            # If none matched, try to find any executable under a 'bin' directory.
+            EXEC_PATH=$(find liquibase -maxdepth 6 -type f -path '*/bin/*' -perm /111 -print -quit || true)
           fi
           if [ -n "$EXEC_PATH" ]; then
             chmod +x "$EXEC_PATH" || true
