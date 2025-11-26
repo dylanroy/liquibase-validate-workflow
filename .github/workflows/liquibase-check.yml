@@ -1,0 +1,74 @@
+name: Liquibase Manual Validate & UpdateSQL
+
+on:
+  workflow_dispatch:
+    inputs:
+      changelog-path:
+        description: 'Path to Liquibase changelog YAML file'
+        required: true
+        default: 'db/changelog/db.changelog.yml'
+      database:
+        description: 'Target database dialect'
+        type: choice
+        required: true
+        default: redshift
+        options:
+          - redshift
+          - mysql
+      liquibase-version:
+        description: 'Liquibase CLI version'
+        required: false
+        default: '4.29.2'
+
+jobs:
+  liquibase-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Determine offline database URL
+        id: dburl
+        run: |
+          if [ "${{ github.event.inputs.database }}" = "redshift" ]; then
+            echo "url=offline:redshift" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.database }}" = "mysql" ]; then
+            echo "url=offline:mysql" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download Liquibase
+        run: |
+          curl -L "https://github.com/liquibase/liquibase/releases/download/v${{ github.event.inputs.liquibase-version }}/liquibase-${{ github.event.inputs.liquibase-version }}.tar.gz" -o liquibase.tar.gz
+          mkdir liquibase
+          tar -xzf liquibase.tar.gz -C liquibase --strip-components=1
+          echo "$GITHUB_WORKSPACE/liquibase" >> $GITHUB_PATH
+
+      - name: Show Liquibase Version
+        run: liquibase --version
+
+      - name: Validate changelog
+        run: |
+          liquibase \
+            --url="${{ steps.dburl.outputs.url }}" \
+            --changeLogFile="${{ github.event.inputs.changelog-path }}" \
+            validate
+
+      - name: Generate SQL (updateSQL)
+        run: |
+          liquibase \
+            --url="${{ steps.dburl.outputs.url }}" \
+            --changeLogFile="${{ github.event.inputs.changelog-path }}" \
+            updateSQL > liquibase-update.sql
+
+      - name: Upload generated SQL
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquibase-update-sql
+          path: liquibase-update.sql
