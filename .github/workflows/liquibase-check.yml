@@ -46,48 +46,22 @@ jobs:
       - name: Download Liquibase
         run: |
           curl -L "https://github.com/liquibase/liquibase/releases/download/v${{ github.event.inputs.liquibase-version }}/liquibase-${{ github.event.inputs.liquibase-version }}.tar.gz" -o liquibase.tar.gz
-          mkdir -p liquibase
-          tar -xzf liquibase.tar.gz -C liquibase --strip-components=1
-          # Try to locate the liquibase executable inside the extracted tree.
-          # Some distributions put the wrapper in a subdir (e.g. 'bin' or root),
-          # and sometimes the executable includes the version in its filename.
-          # Prefer files that are executable and whose name contains 'liquibase'.
-          EXEC_PATH=$(find liquibase -maxdepth 6 -type f \( -iname '*liquibase*' -o -iname 'liquibase.sh' -o -iname 'liquibase-cli' \) -perm /111 -print -quit || true)
-          if [ -z "$EXEC_PATH" ]; then
-            # If none matched, try to find any executable under a 'bin' directory.
-            EXEC_PATH=$(find liquibase -maxdepth 6 -type f -path '*/bin/*' -perm /111 -print -quit || true)
-          fi
-          if [ -n "$EXEC_PATH" ]; then
-            chmod +x "$EXEC_PATH" || true
-            echo "Found liquibase executable: $EXEC_PATH"
-            echo "$(dirname \"$EXEC_PATH\")" >> $GITHUB_PATH
-          else
-            echo "No liquibase executable found; listing files for debugging:" >&2
-            ls -la liquibase || true
-            ls -R liquibase || true
-            # Fail early so the logs show what's inside the archive
-            exit 1
-          fi
+          tar -xzf liquibase.tar.gz
 
       - name: Show Liquibase Version
         run: |
-          echo "=== Debug: PATH ==="
-          echo "$PATH"
-          echo "=== Debug: list liquibase dir ==="
-          ls -la "$GITHUB_WORKSPACE/liquibase" || true
-          echo "=== Running liquibase by explicit path ==="
-          "$GITHUB_WORKSPACE/liquibase/liquibase" --version
+          ./liquibase --version
 
       - name: Validate changelog
         run: |
-          liquibase \
+          ./liquibase \
             --url="${{ steps.dburl.outputs.url }}" \
             --changeLogFile="${{ github.event.inputs.changelog-path }}" \
             validate
 
       - name: Generate SQL (updateSQL)
         run: |
-          liquibase \
+          ./liquibase \
             --url="${{ steps.dburl.outputs.url }}" \
             --changeLogFile="${{ github.event.inputs.changelog-path }}" \
             updateSQL > liquibase-update.sql
