@@ -46,12 +46,22 @@ jobs:
       - name: Download Liquibase
         run: |
           curl -L "https://github.com/liquibase/liquibase/releases/download/v${{ github.event.inputs.liquibase-version }}/liquibase-${{ github.event.inputs.liquibase-version }}.tar.gz" -o liquibase.tar.gz
-          mkdir liquibase
+          mkdir -p liquibase
           tar -xzf liquibase.tar.gz -C liquibase --strip-components=1
+          # Ensure the CLI wrapper is executable
+          if [ -f "liquibase/liquibase" ]; then
+            chmod +x liquibase/liquibase
+          fi
           echo "$GITHUB_WORKSPACE/liquibase" >> $GITHUB_PATH
 
       - name: Show Liquibase Version
-        run: liquibase --version
+        run: |
+          echo "=== Debug: PATH ==="
+          echo "$PATH"
+          echo "=== Debug: list liquibase dir ==="
+          ls -la "$GITHUB_WORKSPACE/liquibase" || true
+          echo "=== Running liquibase by explicit path ==="
+          "$GITHUB_WORKSPACE/liquibase/liquibase" --version
 
       - name: Validate changelog
         run: |
