@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: test-user
+      changes:
+        - sqlFile:
+            path: create_test_table.sql
+            relativeToChangelogFile: true
+            endDelimiter: ";"
+            splitStatements: true
