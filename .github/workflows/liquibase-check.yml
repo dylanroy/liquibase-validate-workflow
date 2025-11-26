@@ -6,7 +6,7 @@ on:
       changelog-path:
         description: 'Path to Liquibase changelog YAML file'
         required: true
-        default: 'db/changelog/db.changelog.yml'
+        default: 'db/changelog/changelog.yml'
       database:
         description: 'Target database dialect'
         type: choice
