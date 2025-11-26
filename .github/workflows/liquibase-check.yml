@@ -51,18 +51,18 @@ jobs:
           echo "$GITHUB_WORKSPACE/liquibase" >> $GITHUB_PATH
 
       - name: Show Liquibase Version
-        run: $GITHUB_WORKSPACE/liquibase --version
+        run: $GITHUB_WORKSPACE/liquibase/liquibase --version
 
       - name: Validate changelog
         run: |
-          $GITHUB_WORKSPACE/liquibase \
+          $GITHUB_WORKSPACE/liquibase/liquibase \
             --url="${{ steps.dburl.outputs.url }}" \
             --changeLogFile="${{ github.event.inputs.changelog-path }}" \
             validate
 
       - name: Generate SQL (updateSQL)
         run: |
-          $GITHUB_WORKSPACE/liquibase \
+          $GITHUB_WORKSPACE/liquibase/liquibase \
             --url="${{ steps.dburl.outputs.url }}" \
             --changeLogFile="${{ github.event.inputs.changelog-path }}" \
             updateSQL > liquibase-update.sql
